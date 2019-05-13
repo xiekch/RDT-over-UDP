@@ -1,7 +1,7 @@
 import socket
 import time
-import json
-
+# import json
+import pickle
 
 class UDPServer:
     def __init__(self, ip, port):
@@ -15,10 +15,11 @@ class UDPServer:
     def receive(self):
         rawData,addr=self.socket.recvfrom(200+self.MSS)
         self.ackNum+=len(rawData)
-        packet=json.loads(rawData.decode())
+        packet=pickle.loads(rawData)
         # print(rawData)
         data=packet['data']
         if packet['Syn']==True:
+            # print(rawData)  
             return (data,1)
         elif packet['Fin']==True:
             return (data,-1)
@@ -33,9 +34,9 @@ class UDPServer:
             # print(flag)
             
             if flag==1:
-                file=open(data['fileName'],'wb')                
+                file=open(data['fileName'],'wb') 
             elif flag==0:
-                file.write(data.encode('ISO-8859-1'))
+                file.write(data)
             elif flag==-1:
                 file.flush()
                 finish=True

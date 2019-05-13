@@ -2,8 +2,8 @@
 import os
 import socket
 import time
-import json
 import math
+import pickle
 
 # rdt1.0->rdt->2.0->rdt3.0 iteration
 
@@ -13,15 +13,12 @@ class Packet:
         self.packet={}
         self.packet['seqNum']=seqNum
         self.packet['ackNum']=ackNum
+        self.packet['data']=data
         for k,v in kwargs.items():
             self.packet[k]=v
-        if isinstance(data,bytes):
-            self.packet['data']=data.decode('ISO-8859-1')
-        else:
-            self.packet['data']=data
 
-    def __str__(self):
-        return json.dumps(self.packet)
+    def serialize(self):
+        return pickle.dumps(self.packet)
 
 # p2p
 class UDP:
@@ -59,12 +56,12 @@ class UDP:
 
             if self.seqNum==0:
                 packet=Packet(self.seqNum,self.ackNum,data,Syn=True,Fin=False)
-            elif data==b'':
+            elif len(data)==0:
                 packet=Packet(self.seqNum,self.ackNum,data,Syn=False,Fin=True)
-                print('End of transmission')
+                print('End of the transmission')
             else:
                 packet=Packet(self.seqNum,self.ackNum,data,Syn=False,Fin=False)
-            pkt=str(packet).encode()
+            pkt=packet.serialize()
             socket.sendto(pkt,self.sendAddr)
             self.seqNum+=len(pkt)
         
@@ -96,4 +93,4 @@ class UDP:
 
 if __name__ == '__main__':
     server = UDP(('localhost', 8000),('172.18.109.30',8080))
-    server.sendFile('./notesOnPRML.pdf')
+    server.sendFile('test.py')#('./notesOnPRML.pdf')
