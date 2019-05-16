@@ -1,14 +1,9 @@
-import socket
-import time
-import pickle
-from packet import *
 from rdtrecv import RDTRecv
 
 class Server:
     def __init__(self, addr):
         self.rdtRecv=RDTRecv(addr)
         self.addr=addr
-        self.rdtRecv.listen()
 
     def receiveFile(self):
         print('Start of the transmission')

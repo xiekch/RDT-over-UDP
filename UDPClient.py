@@ -1,14 +1,9 @@
 # import sys
 import os
-import socket as st
-import time
-import math
-import pickle
-from packet import Packet
 from rdtsend import RDTSend
 # rdt1.0->rdt->2.0->rdt3.0 iteration
 
-# p2p
+
 class Client:
     def __init__(self, addr):
         self.rdtSend=RDTSend(addr)
@@ -30,15 +25,14 @@ class Client:
 
         # try:
         if not os.path.exists(fileName):
-            raise Exception('File not finded')          
+            raise Exception('File not finded')
         
         file=open(fileName,'rb')
+        dataList=[]
         metaMessage=self.getMetaMessage(fileName)
-
-        self.rdtSend.sendData([metaMessage])
+        dataList.append(metaMessage)
         finish=False
         while not finish:
-            dataList=[]
             for i in range(self.bufferSize):
                 line=file.read(self.MSS)
                 if len(line)==0:
@@ -46,6 +40,7 @@ class Client:
                     break
                 dataList.append(line)
             self.rdtSend.sendData(dataList)
+            dataList=[]
         self.rdtSend.end()
 
         # except Exception as e:

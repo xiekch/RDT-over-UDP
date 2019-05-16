@@ -4,7 +4,7 @@ from packet import Packet
 import time
 import math
 import threading
-from threading import Timer
+
 
 class RDTSend:
 
@@ -20,27 +20,27 @@ class RDTSend:
         self.sendAckNum = 0
         self.windowSize = 1000
         self.maxTimeout = 4
-        self.started=False
+        self.started = False
 
     def start(self):
-        self.started=True
+        self.started = True
         self.seqNum = self.ackNum = self.sendAckNum = 0
         print('Send to %s:%s' % self.sendAddr)
         threading.Thread(target=self.count).start()
         packet = Packet(b'', seqNum=self.seqNum,
                         ackNum=self.ackNum, Syn=True, Fin=False)
-        self.seqNum+=1
-        self.rdtSend({0:packet})
+        self.seqNum += 1
+        self.rdtSend({0: packet})
 
     def end(self):
         packet = Packet(b'', seqNum=self.seqNum,
                         ackNum=self.ackNum, Syn=False, Fin=True)
-        self.started=False
+        self.started = False
         self.seqNum += len(pickle.dumps(packet.packet['data']))
-        self.rdtSend({packet.packet['seqNum']:packet})
+        self.rdtSend({packet.packet['seqNum']: packet})
 
     def close(self):
-        self.started=False
+        self.started = False
         if hasattr(self, 'sendSocket'):
             self.sendSocket.close()
         print('End of sender')
@@ -49,8 +49,8 @@ class RDTSend:
         for packet in packetList:
             self.sendSocket.sendto(packet.serialize(), self.sendAddr)
 
-    def rdtSend(self,packetDict):
-        startTime=time.time()
+    def rdtSend(self, packetDict):
+        startTime = time.time()
         self.sendPacket([p for p in packetDict.values()])
         self.waitForAck(packetDict, startTime)
 
@@ -69,13 +69,13 @@ class RDTSend:
                 packetDict = {}
         if packetDict:
             self.rdtSend(packetDict)
-        
 
     def waitForAck(self, packetDict, startTime):
         # print('send '+str(self.seqNum))
         ackFinish = False
         resendTimes = 0
         duplicateTimes = 0
+        timeout = False
         while not ackFinish:
             try:
                 self.sendSocket.settimeout(self.timeout)
@@ -88,31 +88,34 @@ class RDTSend:
                     self.sendAckNum = ackNum
                     duplicateTimes = 0
                     resendTimes = 0
+                    timeout=False
                 elif ackNum == self.sendAckNum:
                     duplicateTimes += 1
                     if duplicateTimes == 3:
                         raise Exception
 
             except Exception as e:
+                if isinstance(e, st.timeout):
+                    # print('timeout')
+                    timeout = True
                 # print(str(self.seqNum))
                 resendTimes += 1
-                print('resend '+str(self.sendAckNum) +
-                      ' at '+str(resendTimes)+' times')
+                print('resend %d at %d times' % (self.sendAckNum, resendTimes))
                 # print('timeout '+str(self.timeout)+'sec')
                 if resendTimes >= 5:
                     if not self.started:
-                        ackFinish=True
+                        ackFinish = True
                         return True
                     else:
-                        self.started=False
+                        self.started = False
                         raise Exception('resend times >= 5')
                 self.sendPacket([packetDict[self.sendAckNum]])
-                self.updataCongWin(True)
+                self.updataCongWin(True, timeout)
                 self.updataTimeout(True)
-
+        
         endTime = time.time()
         rtt = endTime-startTime
-        self.updataCongWin(resendTimes != 0)
+        self.updataCongWin(resendTimes != 0, timeout)
         self.updataTimeout(resendTimes != 0, rtt)
         return True
 
@@ -126,25 +129,26 @@ class RDTSend:
             if self.timeout < self.maxTimeout:
                 self.timeout *= 2
         else:
-            self.timeout = 0.9*self.timeout+0.1*rtt+0.5*rtt
+            self.timeout = 0.9*self.timeout+0.1*rtt+0.3*rtt
 
-    def updataCongWin(self, resend):
+    def updataCongWin(self, resend, timeout):
         if resend == True:
             self.threshold = math.ceil(0.5*self.congWin)
-            self.congWin = 1
+            if timeout == True:
+                self.congWin = 1
+            else:
+                self.congWin = self.threshold
         elif self.congWin < self.windowSize:
             if self.congWin >= self.threshold:
                 self.congWin += 1
             else:
                 self.congWin *= 2
 
-
     def count(self):
         while True:
-            last=self.seqNum
+            last = self.seqNum
             time.sleep(0.5)
             if self.started:
-                print('sending rate: %dKB/s'%((self.seqNum-last)*2/(1024)))
+                print('sending rate: %dKB/s' % ((self.seqNum-last)*2/(1024)))
             else:
                 break
-            last=self.seqNum

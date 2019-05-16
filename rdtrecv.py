@@ -9,15 +9,13 @@ class RDTRecv:
 
     def __init__(self, addr):
         self.recvAddr = addr
+        self.recvSocket = st.socket(st.AF_INET, st.SOCK_DGRAM)
+        self.recvSocket.bind(self.recvAddr)
         self.MSS = 500
         self.seqNum = 0
         self.ackNum = 0
         self.started=False
         self.windowSize = 1000
-
-    def listen(self):
-        self.recvSocket = st.socket(st.AF_INET, st.SOCK_DGRAM)
-        self.recvSocket.bind(self.recvAddr)
         print('Running at %s:%s' % self.recvAddr)
 
     def close(self):
