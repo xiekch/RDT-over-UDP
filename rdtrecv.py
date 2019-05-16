@@ -11,7 +11,7 @@ class RDTRecv:
         self.recvAddr = addr
         self.recvSocket = st.socket(st.AF_INET, st.SOCK_DGRAM)
         self.recvSocket.bind(self.recvAddr)
-        self.MSS = 500
+        self.MSS = 512
         self.seqNum = 0
         self.ackNum = 0
         self.started=False

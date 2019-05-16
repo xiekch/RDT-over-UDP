@@ -13,6 +13,8 @@ class Server:
         while started:
             dataList,started=self.rdtRecv.receiveData()
             if not file:
+                for k,v in dataList[0].items():
+                    print('%s: %s'%(k,v))
                 file=open(dataList[0]['fileName'],'wb')         
                 for data in dataList[1:]:
                     file.write(data)

@@ -14,13 +14,14 @@ class RDTSend:
         self.timeout = 1
         self.congWin = 1
         self.threshold = 100
-        self.MSS = 500
+        self.MSS = 512
         self.seqNum = 0
         self.ackNum = 0
         self.sendAckNum = 0
         self.windowSize = 1000
         self.maxTimeout = 4
         self.started = False
+        self.resendTimes=0
 
     def start(self):
         self.started = True
@@ -95,12 +96,13 @@ class RDTSend:
                         raise Exception
 
             except Exception as e:
+                self.resendTimes+=1
                 if isinstance(e, st.timeout):
                     # print('timeout')
                     timeout = True
                 # print(str(self.seqNum))
                 resendTimes += 1
-                print('resend %d at %d times' % (self.sendAckNum, resendTimes))
+                # print('resend %d at %d times' % (self.sendAckNum, resendTimes))
                 # print('timeout '+str(self.timeout)+'sec')
                 if resendTimes >= 5:
                     if not self.started:
@@ -147,8 +149,10 @@ class RDTSend:
     def count(self):
         while True:
             last = self.seqNum
+            self.resendTimes=0
             time.sleep(0.5)
             if self.started:
                 print('sending rate: %dKB/s' % ((self.seqNum-last)*2/(1024)))
+                print('resend ratio: %.3f%%'%((self.resendTimes*self.MSS*100)/(self.seqNum-last)))
             else:
                 break
