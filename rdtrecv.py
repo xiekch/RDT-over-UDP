@@ -13,7 +13,7 @@ class RDTRecv:
         self.seqNum = 0
         self.ackNum = 0
         self.started=False
-        self.windowSize = 2000
+        self.windowSize = 1000
 
     def listen(self):
         self.recvSocket = st.socket(st.AF_INET, st.SOCK_DGRAM)
