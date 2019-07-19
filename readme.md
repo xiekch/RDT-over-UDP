@@ -134,14 +134,15 @@ author: xiekch
 
 ### 运行方式
 
-```shell
-python UDPClient.py [ServerIP] [ServerPort] [FileSavedDirectory]
-```
+First run `UDPServer`.
 
 ```shell
 python UDPServer.py [ServerIP] [ServerPort] [FileName]
 ```
 
+```shell
+python UDPClient.py [ServerIP] [ServerPort] [FileSavedDirectory]
+```
 
 
 ### Todo
