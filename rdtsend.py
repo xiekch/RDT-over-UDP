@@ -21,7 +21,7 @@ class RDTSend:
         self.windowSize = 1000
         self.maxTimeout = 4
         self.started = False
-        self.resendTimes=0
+        self.resendTimes = 0
 
     def start(self):
         self.started = True
@@ -89,16 +89,16 @@ class RDTSend:
                     self.sendAckNum = ackNum
                     duplicateTimes = 0
                     resendTimes = 0
-                    timeout=False
+                    timeout = False
+                # fast retransmit
                 elif ackNum == self.sendAckNum:
                     duplicateTimes += 1
                     if duplicateTimes == 3:
                         raise Exception
 
             except Exception as e:
-                self.resendTimes+=1
+                self.resendTimes += 1
                 if isinstance(e, st.timeout):
-                    # print('timeout')
                     timeout = True
                 # print(str(self.seqNum))
                 resendTimes += 1
@@ -114,7 +114,7 @@ class RDTSend:
                 self.sendPacket([packetDict[self.sendAckNum]])
                 self.updataCongWin(True, timeout)
                 self.updataTimeout(True)
-        
+
         endTime = time.time()
         rtt = endTime-startTime
         self.updataCongWin(resendTimes != 0, timeout)
@@ -131,7 +131,7 @@ class RDTSend:
             if self.timeout < self.maxTimeout:
                 self.timeout *= 2
         else:
-            self.timeout = 0.9*self.timeout+0.1*rtt+0.3*rtt
+            self.timeout = 0.8*self.timeout+0.2*rtt+0.2*rtt
 
     def updataCongWin(self, resend, timeout):
         if resend == True:
@@ -149,10 +149,11 @@ class RDTSend:
     def count(self):
         while True:
             last = self.seqNum
-            self.resendTimes=0
+            self.resendTimes = 0
             time.sleep(0.5)
             if self.started:
                 print('sending rate: %dKB/s' % ((self.seqNum-last)*2/(1024)))
-                print('resend ratio: %.3f%%'%((self.resendTimes*self.MSS*100)/(self.seqNum-last)))
+                print('resend ratio: %.3f%%' %
+                      ((self.resendTimes*self.MSS*100)/(self.seqNum-last+1)))
             else:
                 break
